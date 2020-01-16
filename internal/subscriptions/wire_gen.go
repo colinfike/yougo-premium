@@ -11,8 +11,11 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeSubManager() *SubManager {
+func InitializeSubManager() (*SubManager, error) {
 	configConfig := config.NewConfig()
-	subManager := NewSubManager(configConfig)
-	return subManager
+	subManager, err := NewSubManager(configConfig)
+	if err != nil {
+		return nil, err
+	}
+	return subManager, nil
 }

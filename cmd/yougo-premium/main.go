@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -11,8 +12,8 @@ import (
 )
 
 func main() {
-	// TODO: Add errors to sub manager
-	subManager := subscriptions.InitializeSubManager()
+	// TODO: Error handling here
+	subManager, _ := subscriptions.InitializeSubManager()
 	// TODO: Error handling here
 	ytManager, _ := youtube.InitializeYoutubeManager()
 	app := &cli.App{
@@ -42,7 +43,11 @@ func main() {
 				Aliases: []string{"l"},
 				Usage:   "list current subscriptions",
 				Action: func(c *cli.Context) error {
-					// TODO: Add flag here for
+					subs, err := commands.ListSubscriptions(subManager)
+					if err != nil {
+						return err
+					}
+					fmt.Println(subs)
 					return nil
 				},
 			},

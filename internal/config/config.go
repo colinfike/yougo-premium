@@ -13,8 +13,8 @@ type Config struct {
 }
 
 const (
-	defaultDownload             string = "/videos"
-	defaultSubscriptionLocation string = "$home/.yougo-premium"
+	defaultDownload             string = "/yougo-premium/"
+	defaultSubscriptionLocation string = "/.yougo-premium"
 )
 
 var once sync.Once

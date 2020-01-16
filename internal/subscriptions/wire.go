@@ -8,7 +8,7 @@ import (
 	"github.com/google/wire"
 )
 
-func InitializeSubManager() *SubManager {
+func InitializeSubManager() (*SubManager, error) {
 	wire.Build(config.NewConfig, NewSubManager)
-	return &SubManager{}
+	return &SubManager{}, nil
 }

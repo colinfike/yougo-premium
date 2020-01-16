@@ -15,6 +15,8 @@ type ChannelInfo struct {
 	ID, Name string
 }
 
+// YoutubeManager is the main struct for interacting with the youtube package. Contains the google
+// api client for interacting with Youtube. // TODO: I think naming this Manager may be OK.
 type YoutubeManager struct {
 	config         *config.Config
 	youtubeService *youtubesdk.Service
@@ -50,20 +52,33 @@ func (m *YoutubeManager) GetChannelInfo(url string) (ChannelInfo, error) {
 	return ChannelInfo{}, errors.New("Invalid Channel/Video URL")
 }
 
-// Return a struct with channelID and channelName
 func (m *YoutubeManager) getChannelFromVideoID(videoID string) (ChannelInfo, error) {
-	return ChannelInfo{}, nil
+	resp, err := m.youtubeService.Videos.List("snippet").Id(videoID).Do()
+	if err != nil {
+		return ChannelInfo{}, err
+	}
+	if len(resp.Items) == 0 {
+		return ChannelInfo{}, errors.New("Video not found")
+	}
+	return ChannelInfo{resp.Items[0].Snippet.ChannelId, resp.Items[0].Snippet.ChannelTitle}, nil
 }
 
-// Return a struct with channelID and channelName
 func (m *YoutubeManager) getChannelFromChannelID(channelID string) (ChannelInfo, error) {
-	return ChannelInfo{}, nil
+	resp, err := m.youtubeService.Channels.List("snippet").Id(channelID).Do()
+	if err != nil {
+		return ChannelInfo{}, err
+	}
+	if len(resp.Items) == 0 {
+		return ChannelInfo{}, errors.New("Channel not found")
+	}
+	return ChannelInfo{resp.Items[0].Id, resp.Items[0].Snippet.Title}, nil
 }
 
 func (m *YoutubeManager) fetchNewVideos(channelID string, ts time.Time) ([]string, error) {
 	return []string{}, nil
 }
 
+// Move to some sort of utils package?
 func getMatch(regex string, input string) (string, error) {
 	re := regexp.MustCompile(regex)
 	matches := re.FindSubmatch([]byte(input))
