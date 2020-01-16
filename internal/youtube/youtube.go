@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"regexp"
-	"time"
 
 	"github.com/colinfike/yougo-premium/internal/config"
 	"google.golang.org/api/option"
@@ -74,8 +73,20 @@ func (m *YoutubeManager) getChannelFromChannelID(channelID string) (ChannelInfo,
 	return ChannelInfo{resp.Items[0].Id, resp.Items[0].Snippet.Title}, nil
 }
 
-func (m *YoutubeManager) fetchNewVideos(channelID string, ts time.Time) ([]string, error) {
-	return []string{}, nil
+func (m *YoutubeManager) FetchNewVideos(channelID, ts string) ([]string, error) {
+	req := m.youtubeService.Search.List("snippet").ChannelId(channelID).Order("date").MaxResults(5)
+	if ts != "" {
+		req.PublishedAfter(ts)
+	}
+	resp, err := req.Do()
+	if err != nil {
+		return nil, err
+	}
+	urls := make([]string, 0)
+	for _, video := range resp.Items {
+		urls = append(urls, video.Id.VideoId)
+	}
+	return urls, nil
 }
 
 // Move to some sort of utils package?

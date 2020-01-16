@@ -94,7 +94,17 @@ func (subManager *SubManager) RemoveSubscription(channelID string) error {
 	return nil
 }
 
-func (subManager *SubManager) UpdateLastRefresh(channelID string, ts time.Time) error {
+func (subManager *SubManager) UpdateLastRefresh(channelID string) error {
+	sub := subManager.Subscriptions[channelID]
+	sub.LastRefresh = time.Now().Format(time.RFC3339)
+	subManager.Subscriptions[channelID] = sub
+
+	// TODO: Hacky, update to not save after each subscription is downloaded
+	err := subManager.saveSubscriptions()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

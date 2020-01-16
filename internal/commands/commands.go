@@ -2,6 +2,7 @@ package commands
 
 import (
 	"github.com/colinfike/yougo-premium/internal/subscriptions"
+	"github.com/colinfike/yougo-premium/internal/video"
 	"github.com/colinfike/yougo-premium/internal/youtube"
 )
 
@@ -19,12 +20,26 @@ func RemoveSubscription(id string, subManager *subscriptions.SubManager) error {
 	return subManager.RemoveSubscription(id)
 }
 func ListSubscriptions(subManager *subscriptions.SubManager) string {
+	// TODO: Make the Subscriptions private and add a getter.
 	return formatSubs(subManager.Subscriptions)
 }
 func ListVideos(subManager *subscriptions.SubManager) error {
 	return nil
 }
-func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.YoutubeManager) error {
+func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.YoutubeManager, downloader *video.Downloader) error {
+	for _, sub := range subManager.Subscriptions {
+		ids, err := youtubeManger.FetchNewVideos(sub.ChannelID, sub.LastRefresh)
+		if err != nil {
+			return err
+		}
+		for _, id := range ids {
+			err := downloader.DownloadVideo(id)
+			if err != nil {
+				return err
+			}
+		}
+		subManager.UpdateLastRefresh(sub.ChannelID)
+	}
 	return nil
 }
 

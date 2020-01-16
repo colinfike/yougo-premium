@@ -7,16 +7,20 @@ import (
 
 	"github.com/colinfike/yougo-premium/internal/commands"
 	"github.com/colinfike/yougo-premium/internal/subscriptions"
+	"github.com/colinfike/yougo-premium/internal/video"
 	"github.com/colinfike/yougo-premium/internal/youtube"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
+	// TODO: Create function to initialize folder and file on first run if they don't exist
 	// TODO: Overhaul errors in general
 	// TODO: Error handling here
 	subManager, _ := subscriptions.InitializeSubManager()
 	// TODO: Error handling here
 	ytManager, _ := youtube.InitializeYoutubeManager()
+	// TODO: Error handling here
+	downloader, _ := video.InitializeDownloader()
 	app := &cli.App{
 		Name:     "yougo-premium",
 		Usage:    "Follow and download latest videos from subscriptions",
@@ -53,7 +57,7 @@ func main() {
 				Name:  "refresh",
 				Usage: "download latest videos from your subscriptions",
 				Action: func(c *cli.Context) error {
-					return nil
+					return commands.RefreshVideos(subManager, ytManager, downloader)
 				},
 			},
 		},
