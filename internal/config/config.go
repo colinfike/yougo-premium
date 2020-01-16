@@ -1,13 +1,15 @@
 package config
 
-import "os"
+import (
+	"os"
+	"sync"
+)
 
 // Config contains configuration info from env vars and user preferences.
 type Config struct {
 	DownloadLocation     string
 	SubscriptionLocation string
-	YoutubeAccessKey     string
-	YoutubeSecretKey     string
+	YoutubeAPIKey        string
 }
 
 const (
@@ -15,8 +17,12 @@ const (
 	defaultSubscriptionLocation string = "$home/.yougo-premium"
 )
 
-var config Config = Config{defaultDownload, defaultSubscriptionLocation, os.Getenv("YOUTUBE_ACCESS_KEY"), os.Getenv("YOUTUBE_SECRET_KEY")}
+var once sync.Once
+var config *Config
 
-func getConfig() *Config {
-	return &config
+func NewConfig() *Config {
+	once.Do(func() {
+		config = &Config{defaultDownload, defaultSubscriptionLocation, os.Getenv("YOUTUBE_API_KEY")}
+	})
+	return config
 }

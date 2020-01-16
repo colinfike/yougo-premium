@@ -32,13 +32,13 @@ func saveSubscriptions() {
 	// iterate over map and encode every subscription as JSON and save the entire data
 }
 
-func GetSubManager(c *config.Config) *SubManager {
+func NewSubManager(c *config.Config) *SubManager {
 	once.Do(func() {
 		manager = &SubManager{config: *c, Subscriptions: loadSubscriptions()}
 	})
 	return manager
 }
-func (subManager *SubManager) AddSubscription(channelID string) error {
+func (subManager *SubManager) AddSubscription(ID, name string) error {
 	return nil
 }
 func (subManager *SubManager) RemoveSubscription(channelID string) error {
