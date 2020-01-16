@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+	// TODO: Overhaul errors in general
 	// TODO: Error handling here
 	subManager, _ := subscriptions.InitializeSubManager()
 	// TODO: Error handling here
@@ -33,9 +34,9 @@ func main() {
 			{
 				Name:    "remove",
 				Aliases: []string{"r"},
-				Usage:   "remove a channel to your subscriptions",
+				Usage:   "remove a channel to your subscriptions via channel ID",
 				Action: func(c *cli.Context) error {
-					return nil
+					return commands.RemoveSubscription(c.Args().First(), subManager)
 				},
 			},
 			{
@@ -43,10 +44,7 @@ func main() {
 				Aliases: []string{"l"},
 				Usage:   "list current subscriptions",
 				Action: func(c *cli.Context) error {
-					subs, err := commands.ListSubscriptions(subManager)
-					if err != nil {
-						return err
-					}
+					subs := commands.ListSubscriptions(subManager)
 					fmt.Println(subs)
 					return nil
 				},

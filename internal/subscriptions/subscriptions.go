@@ -72,6 +72,7 @@ func NewSubManager(c *config.Config) (*SubManager, error) {
 	}
 	return manager, nil
 }
+
 func (subManager *SubManager) AddSubscription(channel youtube.ChannelInfo) error {
 	if _, ok := subManager.Subscriptions[channel.ID]; ok {
 		return errors.New("Already subscribed to this channel")
@@ -83,12 +84,20 @@ func (subManager *SubManager) AddSubscription(channel youtube.ChannelInfo) error
 	}
 	return nil
 }
+
 func (subManager *SubManager) RemoveSubscription(channelID string) error {
+	delete(subManager.Subscriptions, channelID)
+	err := subManager.saveSubscriptions()
+	if err != nil {
+		return err
+	}
 	return nil
 }
+
 func (subManager *SubManager) UpdateLastRefresh(channelID string, ts time.Time) error {
 	return nil
 }
+
 func (subManager *SubManager) GetSubscriptions() ([]Subscription, error) {
 	return []Subscription{}, nil
 }
