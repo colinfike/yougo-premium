@@ -22,7 +22,7 @@ type YoutubeManager struct {
 
 const (
 	channelRegex string = `youtube.com\/channel\/(.*)`
-	videoRegex   string = `(?:youtu.be\/|youtube.com\/watch\?v=)([^=]*)`
+	videoRegex   string = `(?:youtu.be\/|youtube.com\/watch\?v=)([^&]*)`
 )
 
 // NewYoutubeManager initializes and returns a YoutubeManager
