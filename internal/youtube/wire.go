@@ -7,7 +7,7 @@ import (
 	"github.com/google/wire"
 )
 
-func InitializeYoutubeManager() (*YoutubeManager, error) {
-	wire.Build(config.NewConfig, NewYoutubeManager)
-	return &YoutubeManager{}, nil
+func InitializeWrapper() (*Wrapper, error) {
+	wire.Build(config.NewConfig, NewWrapper)
+	return &Wrapper{}, nil
 }

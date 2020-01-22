@@ -12,7 +12,7 @@ import (
 // TODO: Rename to app code?
 
 // AddSubscription adds the channel associated with the URL to subscriptions
-func AddSubscription(url string, subManager *subscriptions.SubManager, ytManager *youtube.YoutubeManager) (string, error) {
+func AddSubscription(url string, subManager *subscriptions.SubManager, ytManager *youtube.Wrapper) (string, error) {
 	channelInfo, err := ytManager.GetChannelInfo(url)
 	if err != nil {
 		return "", err
@@ -40,7 +40,7 @@ func ListVideos(subManager *subscriptions.SubManager) error {
 }
 
 // RefreshVideos downloads all new videos from all subscriptions since the last time they were refreshed.
-func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.YoutubeManager, downloader *video.Downloader) (int, error) {
+func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.Wrapper, downloader *video.Downloader) (int, error) {
 	var vidCount int
 	for _, sub := range subManager.GetSubscriptions() {
 		ids, err := youtubeManger.FetchNewVideos(sub.ChannelID, sub.LastRefresh)

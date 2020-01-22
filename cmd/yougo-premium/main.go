@@ -96,12 +96,12 @@ func main() {
 	}
 }
 
-func initDependencies() (*subscriptions.SubManager, *youtube.YoutubeManager, *video.Downloader) {
+func initDependencies() (*subscriptions.SubManager, *youtube.Wrapper, *video.Downloader) {
 	subManager, err := subscriptions.InitializeSubManager()
 	if err != nil {
 		log.Fatal(err)
 	}
-	ytManager, err := youtube.InitializeYoutubeManager()
+	ytManager, err := youtube.InitializeWrapper()
 	if err != nil {
 		log.Fatal(err)
 	}

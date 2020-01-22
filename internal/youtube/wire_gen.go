@@ -11,9 +11,9 @@ import (
 
 // Injectors from wire.go:
 
-func InitializeYoutubeManager() (*YoutubeManager, error) {
+func InitializeWrapper() (*Wrapper, error) {
 	configConfig := config.NewConfig()
-	youtubeManager, err := NewYoutubeManager(configConfig)
+	youtubeManager, err := NewWrapper(configConfig)
 	if err != nil {
 		return nil, err
 	}

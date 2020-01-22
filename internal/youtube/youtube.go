@@ -10,35 +10,42 @@ import (
 	youtubesdk "google.golang.org/api/youtube/v3"
 )
 
+const (
+	channelRegex  string = `youtube.com\/channel\/(.*)`
+	videoRegex    string = `(?:youtu.be\/|youtube.com\/watch\?v=)([^&]*)`
+	maxVideoCount int64  = 5
+)
+
 // ChannelInfo contains pertitnent information for a Channel.
 type ChannelInfo struct {
 	ID, Name string
 }
 
-// YoutubeManager is the main struct for interacting with the youtube package. Contains the google
-// api client for interacting with Youtube. // TODO: I think naming this Manager may be OK.
-type YoutubeManager struct {
-	config         *config.Config
-	youtubeService *youtubesdk.Service
+// Wrapper is the main struct for interacting with the youtube package.
+type Wrapper struct {
+	config        *config.Config
+	youtubeClient client
 }
 
-const (
-	channelRegex string = `youtube.com\/channel\/(.*)`
-	videoRegex   string = `(?:youtu.be\/|youtube.com\/watch\?v=)([^&]*)`
-)
+type client interface {
+	listChannels(string) (ChannelInfo, error)
+	listVideos(string) (ChannelInfo, error)
+	searchVideos(string, string, int64) ([]string, error)
+}
 
-// NewYoutubeManager initializes and returns a YoutubeManager
-func NewYoutubeManager(c *config.Config) (*YoutubeManager, error) {
+// NewWrapper initializes and returns a Wrapper
+func NewWrapper(c *config.Config) (*Wrapper, error) {
+	// DI in the youtube client
 	ctx := context.Background()
 	youtubeService, err := youtubesdk.NewService(ctx, option.WithAPIKey(c.YoutubeAPIKey))
 	if err != nil {
 		return nil, err
 	}
-	return &YoutubeManager{c, youtubeService}, nil
+	return &Wrapper{c, &youtubeClient{youtubeService}}, nil
 }
 
 // GetChannelInfo accepts a video or channel URL and returns ChannelInfo
-func (m *YoutubeManager) GetChannelInfo(url string) (ChannelInfo, error) {
+func (m *Wrapper) GetChannelInfo(url string) (ChannelInfo, error) {
 	channelID, err := getMatch(channelRegex, url)
 	if err == nil {
 		return m.getChannelFromChannelID(channelID)
@@ -52,40 +59,33 @@ func (m *YoutubeManager) GetChannelInfo(url string) (ChannelInfo, error) {
 	return ChannelInfo{}, errors.New("Invalid Channel/Video URL")
 }
 
-func (m *YoutubeManager) getChannelFromVideoID(videoID string) (ChannelInfo, error) {
-	resp, err := m.youtubeService.Videos.List("snippet").Id(videoID).Do()
+func (m *Wrapper) getChannelFromVideoID(videoID string) (ChannelInfo, error) {
+	chanInfo, err := m.youtubeClient.listVideos(videoID)
 	if err != nil {
 		return ChannelInfo{}, err
 	}
-	if len(resp.Items) == 0 {
-		return ChannelInfo{}, errors.New("Video not found")
+	if (ChannelInfo{}) == chanInfo {
+		return ChannelInfo{}, errors.New("Channel associated with videoID " + videoID + " not found")
 	}
-	return ChannelInfo{resp.Items[0].Snippet.ChannelId, resp.Items[0].Snippet.ChannelTitle}, nil
+	return chanInfo, nil
 }
 
-func (m *YoutubeManager) getChannelFromChannelID(channelID string) (ChannelInfo, error) {
-	resp, err := m.youtubeService.Channels.List("snippet").Id(channelID).Do()
+func (m *Wrapper) getChannelFromChannelID(channelID string) (ChannelInfo, error) {
+	chanInfo, err := m.youtubeClient.listChannels(channelID)
 	if err != nil {
 		return ChannelInfo{}, err
 	}
-	if len(resp.Items) == 0 {
-		return ChannelInfo{}, errors.New("Channel not found")
+	if (ChannelInfo{}) == chanInfo {
+		return ChannelInfo{}, errors.New("Channel associated with channelID " + channelID + " not found")
 	}
-	return ChannelInfo{resp.Items[0].Id, resp.Items[0].Snippet.Title}, nil
+	return chanInfo, nil
 }
 
-func (m *YoutubeManager) FetchNewVideos(channelID, ts string) ([]string, error) {
-	req := m.youtubeService.Search.List("snippet").ChannelId(channelID).Order("date").MaxResults(5)
-	if ts != "" {
-		req.PublishedAfter(ts)
-	}
-	resp, err := req.Do()
+// FetchNewVideos returns an array of video URLs.
+func (m *Wrapper) FetchNewVideos(channelID, ts string) ([]string, error) {
+	urls, err := m.youtubeClient.searchVideos(channelID, ts, maxVideoCount)
 	if err != nil {
 		return nil, err
-	}
-	urls := make([]string, 0)
-	for _, video := range resp.Items {
-		urls = append(urls, video.Id.VideoId)
 	}
 	return urls, nil
 }
@@ -98,4 +98,40 @@ func getMatch(regex string, input string) (string, error) {
 		return string(matches[1]), nil
 	}
 	return "", errors.New("getMatch: No Match")
+}
+
+// youtubeClient is a wrapper around the youtube API in order to faciliate DI/unit testing of the functions on Wrapper.
+// Wrapper barely does anything more than youtubeClient but the exercise is worth it.
+type youtubeClient struct {
+	service *youtubesdk.Service
+}
+
+func (yt *youtubeClient) listChannels(channelID string) (ChannelInfo, error) {
+	resp, err := yt.service.Channels.List("snippet").Id(channelID).Do()
+	if err != nil || len(resp.Items) == 0 {
+		return ChannelInfo{}, err
+	}
+	return ChannelInfo{resp.Items[0].Id, resp.Items[0].Snippet.Title}, nil
+}
+func (yt *youtubeClient) listVideos(videoID string) (ChannelInfo, error) {
+	resp, err := yt.service.Videos.List("snippet").Id(videoID).Do()
+	if err != nil || len(resp.Items) == 0 {
+		return ChannelInfo{}, err
+	}
+	return ChannelInfo{resp.Items[0].Snippet.ChannelId, resp.Items[0].Snippet.ChannelTitle}, nil
+}
+func (yt *youtubeClient) searchVideos(channelID string, ts string, maxResults int64) ([]string, error) {
+	req := yt.service.Search.List("snippet").ChannelId(channelID).Order("date").MaxResults(maxResults)
+	if ts != "" {
+		req.PublishedAfter(ts)
+	}
+	resp, err := req.Do()
+	if err != nil {
+		return nil, err
+	}
+	urls := make([]string, 0)
+	for _, video := range resp.Items {
+		urls = append(urls, video.Id.VideoId)
+	}
+	return urls, nil
 }
