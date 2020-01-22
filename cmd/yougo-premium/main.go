@@ -15,12 +15,7 @@ import (
 func main() {
 	// TODO: Create function to initialize folder and file on first run if they don't exist
 	// TODO: Overhaul errors in general
-	// TODO: Error handling here
-	subManager, _ := subscriptions.InitializeSubManager()
-	// TODO: Error handling here
-	ytManager, _ := youtube.InitializeYoutubeManager()
-	// TODO: Error handling here
-	downloader, _ := video.InitializeDownloader()
+	subManager, ytManager, downloader := initDependencies()
 	app := &cli.App{
 		Name:     "yougo-premium",
 		Usage:    "Follow and download latest videos from subscriptions",
@@ -32,7 +27,12 @@ func main() {
 				Usage:     "add a channel to your subscriptions via channel url or video url",
 				ArgsUsage: "[url]",
 				Action: func(c *cli.Context) error {
-					return commands.AddSubscription(c.Args().First(), subManager, ytManager)
+					chanName, err := commands.AddSubscription(c.Args().First(), subManager, ytManager)
+					if err != nil {
+						return err
+					}
+					fmt.Println("Subscribed to " + chanName)
+					return nil
 				},
 			},
 			{
@@ -40,7 +40,12 @@ func main() {
 				Aliases: []string{"r"},
 				Usage:   "remove a channel to your subscriptions via channel ID",
 				Action: func(c *cli.Context) error {
-					return commands.RemoveSubscription(c.Args().First(), subManager)
+					chanName, err := commands.RemoveSubscription(c.Args().First(), subManager)
+					if err != nil {
+						return err
+					}
+					fmt.Println("Unsubcribed from " + chanName)
+					return nil
 				},
 			},
 			{
@@ -49,7 +54,11 @@ func main() {
 				Usage:   "list current subscriptions",
 				Action: func(c *cli.Context) error {
 					subs := commands.ListSubscriptions(subManager)
-					fmt.Println(subs)
+					if len(subs) == 0 {
+						fmt.Println("Not subscribed to any channels.")
+					} else {
+						fmt.Println(subs)
+					}
 					return nil
 				},
 			},
@@ -57,7 +66,13 @@ func main() {
 				Name:  "refresh",
 				Usage: "download latest videos from your subscriptions",
 				Action: func(c *cli.Context) error {
-					return commands.RefreshVideos(subManager, ytManager, downloader)
+					fmt.Println("Checking for new videos...")
+					vidCount, err := commands.RefreshVideos(subManager, ytManager, downloader)
+					if err != nil {
+						return err
+					}
+					fmt.Printf("%v new videos downloaded.", vidCount)
+					return nil
 				},
 			},
 		},
@@ -67,4 +82,20 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func initDependencies() (*subscriptions.SubManager, *youtube.YoutubeManager, *video.Downloader) {
+	subManager, err := subscriptions.InitializeSubManager()
+	if err != nil {
+		log.Fatal(err)
+	}
+	ytManager, err := youtube.InitializeYoutubeManager()
+	if err != nil {
+		log.Fatal(err)
+	}
+	downloader, err := video.InitializeDownloader()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return subManager, ytManager, downloader
 }

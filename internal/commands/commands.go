@@ -1,6 +1,9 @@
 package commands
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/colinfike/yougo-premium/internal/subscriptions"
 	"github.com/colinfike/yougo-premium/internal/video"
 	"github.com/colinfike/yougo-premium/internal/youtube"
@@ -9,38 +12,52 @@ import (
 // TODO: Rename to app code?
 
 // AddSubscription adds the channel associated with the URL to subscriptions
-func AddSubscription(url string, subManager *subscriptions.SubManager, ytManager *youtube.YoutubeManager) error {
+func AddSubscription(url string, subManager *subscriptions.SubManager, ytManager *youtube.YoutubeManager) (string, error) {
 	channelInfo, err := ytManager.GetChannelInfo(url)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return subManager.AddSubscription(channelInfo)
+	return channelInfo.Name, subManager.AddSubscription(channelInfo)
 }
-func RemoveSubscription(id string, subManager *subscriptions.SubManager) error {
-	return subManager.RemoveSubscription(id)
+
+// RemoveSubscription removes the channel associated with the channelID passed in
+func RemoveSubscription(id string, subManager *subscriptions.SubManager) (string, error) {
+	chanName, err := subManager.RemoveSubscription(id)
+	if err != nil {
+		return "", err
+	}
+	return chanName, nil
 }
+
+// ListSubscriptions lists all currently subscribed channels.
 func ListSubscriptions(subManager *subscriptions.SubManager) string {
-	// TODO: Make the Subscriptions private and add a getter.
-	return formatSubs(subManager.Subscriptions)
+	return formatSubs(subManager.GetSubscriptions())
 }
+
+// ListVideos returns all currently downloaded videos.
 func ListVideos(subManager *subscriptions.SubManager) error {
 	return nil
 }
-func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.YoutubeManager, downloader *video.Downloader) error {
-	for _, sub := range subManager.Subscriptions {
+
+// RefreshVideos downloads all new videos from all subscriptions since the last time they were refreshed.
+func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.YoutubeManager, downloader *video.Downloader) (int, error) {
+	var vidCount int
+	for _, sub := range subManager.GetSubscriptions() {
 		ids, err := youtubeManger.FetchNewVideos(sub.ChannelID, sub.LastRefresh)
 		if err != nil {
-			return err
+			return 0, err
 		}
+		vidCount += len(ids)
 		for _, id := range ids {
-			err := downloader.DownloadVideo(id)
+			name, err := downloader.DownloadVideo(id)
 			if err != nil {
-				return err
+				return 0, err
 			}
+			fmt.Println("Downloaded " + name)
 		}
 		subManager.UpdateLastRefresh(sub.ChannelID)
 	}
-	return nil
+	return vidCount, nil
 }
 
 func formatSubs(subMap map[string]subscriptions.Subscription) string {
@@ -48,5 +65,5 @@ func formatSubs(subMap map[string]subscriptions.Subscription) string {
 	for _, chanInfo := range subMap {
 		output += chanInfo.ChannelName + "\n"
 	}
-	return output
+	return strings.TrimSpace(output)
 }

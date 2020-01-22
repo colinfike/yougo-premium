@@ -13,16 +13,17 @@ import (
 	"github.com/colinfike/yougo-premium/internal/youtube"
 )
 
+// Subscription contains all pertinent information about a subscribed channel
 type Subscription struct {
 	ChannelID   string `json:"ChannelID"`
 	ChannelName string `json:"ChannelName"`
 	LastRefresh string `json:"LastRefresh"`
 }
 
-// Note: I think this level of DI may be overkill but I want to see how testing pans out compared to my non-DI golang work
+// SubManager is the main interface with which you interfact with this package.
 type SubManager struct {
 	config        config.Config
-	Subscriptions map[string]Subscription
+	subscriptions map[string]Subscription
 }
 
 var once sync.Once
@@ -47,7 +48,7 @@ func (subManager *SubManager) loadSubscriptions() (map[string]Subscription, erro
 }
 
 func (subManager *SubManager) saveSubscriptions() error {
-	b, err := json.Marshal(subManager.Subscriptions)
+	b, err := json.Marshal(subManager.subscriptions)
 	if err != nil {
 		return err
 	}
@@ -59,13 +60,14 @@ func (subManager *SubManager) saveSubscriptions() error {
 	return nil
 }
 
+// NewSubManager is the provider function for a SubManager.
 func NewSubManager(c *config.Config) (*SubManager, error) {
 	var err error
 	once.Do(func() {
 		manager = &SubManager{config: *c}
 		var subs map[string]Subscription
 		subs, err = manager.loadSubscriptions()
-		manager.Subscriptions = subs
+		manager.subscriptions = subs
 	})
 	if err != nil {
 		return &SubManager{}, err
@@ -73,11 +75,12 @@ func NewSubManager(c *config.Config) (*SubManager, error) {
 	return manager, nil
 }
 
+// AddSubscription adds the new channel to subscriptions and writes them to disk.
 func (subManager *SubManager) AddSubscription(channel youtube.ChannelInfo) error {
-	if _, ok := subManager.Subscriptions[channel.ID]; ok {
+	if _, ok := subManager.subscriptions[channel.ID]; ok {
 		return errors.New("Already subscribed to this channel")
 	}
-	subManager.Subscriptions[channel.ID] = Subscription{channel.ID, channel.Name, ""}
+	subManager.subscriptions[channel.ID] = Subscription{channel.ID, channel.Name, ""}
 	err := subManager.saveSubscriptions()
 	if err != nil {
 		return err
@@ -85,21 +88,23 @@ func (subManager *SubManager) AddSubscription(channel youtube.ChannelInfo) error
 	return nil
 }
 
-func (subManager *SubManager) RemoveSubscription(channelID string) error {
-	delete(subManager.Subscriptions, channelID)
+// RemoveSubscription removes the passed subscription and writes them to disk.
+func (subManager *SubManager) RemoveSubscription(channelID string) (string, error) {
+	chanName := subManager.subscriptions[channelID].ChannelName
+	delete(subManager.subscriptions, channelID)
 	err := subManager.saveSubscriptions()
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return chanName, nil
 }
 
+// UpdateLastRefresh updates the timestamp of the last refresh for the subscription that matches the passed ChannelID
 func (subManager *SubManager) UpdateLastRefresh(channelID string) error {
-	sub := subManager.Subscriptions[channelID]
+	sub := subManager.subscriptions[channelID]
 	sub.LastRefresh = time.Now().Format(time.RFC3339)
-	subManager.Subscriptions[channelID] = sub
+	subManager.subscriptions[channelID] = sub
 
-	// TODO: Hacky, update to not save after each subscription is downloaded
 	err := subManager.saveSubscriptions()
 	if err != nil {
 		return err
@@ -108,6 +113,7 @@ func (subManager *SubManager) UpdateLastRefresh(channelID string) error {
 	return nil
 }
 
-func (subManager *SubManager) GetSubscriptions() ([]Subscription, error) {
-	return []Subscription{}, nil
+// GetSubscriptions is a getter for the users current subscriptions.
+func (subManager *SubManager) GetSubscriptions() map[string]Subscription {
+	return subManager.subscriptions
 }

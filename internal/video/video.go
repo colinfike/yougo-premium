@@ -8,7 +8,7 @@ import (
 	"os/user"
 
 	"github.com/colinfike/yougo-premium/internal/config"
-	"github.com/rylio/ytdl"
+	"github.com/colinfike/ytdl"
 )
 
 type Downloader struct {
@@ -19,10 +19,10 @@ func NewDownloader(c *config.Config) (*Downloader, error) {
 	return &Downloader{c}, nil
 }
 
-func (dl *Downloader) DownloadVideo(videoID string) error {
+func (dl *Downloader) DownloadVideo(videoID string) (string, error) {
 	vid, err := ytdl.GetVideoInfo("https://www.youtube.com/watch?v=" + videoID)
 	if err != nil {
-		return errors.New("Failed to get video info")
+		return "", errors.New("Failed to get video info")
 	}
 
 	// TODO: Can we stream this? I don't want to download into memory then write to disk
@@ -32,14 +32,15 @@ func (dl *Downloader) DownloadVideo(videoID string) error {
 	// bestFormat := vid.Formats.Best(ytdl.FormatResolutionKey)[0]
 	err = vid.Download(vid.Formats[0], buf)
 	if err != nil {
-		return errors.New("Error downloading video")
+		return "", errors.New("Error downloading video")
 	}
 
 	user, err := user.Current()
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	path := user.HomeDir + dl.config.DownloadLocation + vid.Uploader + " - " + vid.Title + "." + vid.Formats[0].Extension
-	return ioutil.WriteFile(path, buf.Bytes(), os.FileMode(int(0777)))
+	name := vid.Uploader + " - " + vid.Title + "." + vid.Formats[0].Extension
+	path := user.HomeDir + dl.config.DownloadLocation + name
+	return name, ioutil.WriteFile(path, buf.Bytes(), os.FileMode(int(0777)))
 }

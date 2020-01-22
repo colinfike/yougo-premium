@@ -3,8 +3,8 @@ module github.com/colinfike/yougo-premium
 go 1.13
 
 require (
+	github.com/colinfike/ytdl v0.6.3-0.20200121234507-bf534bbfc6da
 	github.com/google/wire v0.4.0
-	github.com/rylio/ytdl v0.6.2
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/cli/v2 v2.1.1
 	google.golang.org/api v0.15.0
