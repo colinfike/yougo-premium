@@ -11,14 +11,17 @@ import (
 	"github.com/colinfike/ytdl"
 )
 
+// Downloader is the main interface into the video package.
 type Downloader struct {
 	config *config.Config
 }
 
+// NewDownloader is the provider function for a Downloader.
 func NewDownloader(c *config.Config) (*Downloader, error) {
 	return &Downloader{c}, nil
 }
 
+// DownloadVideo downloads a youtube video to the default download location.
 func (dl *Downloader) DownloadVideo(videoID string) (string, error) {
 	vid, err := ytdl.GetVideoInfo("https://www.youtube.com/watch?v=" + videoID)
 	if err != nil {
