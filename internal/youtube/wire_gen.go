@@ -7,15 +7,34 @@ package youtube
 
 import (
 	"github.com/colinfike/yougo-premium/internal/config"
+	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
 
 func InitializeWrapper() (*Wrapper, error) {
 	configConfig := config.NewConfig()
-	youtubeManager, err := NewWrapper(configConfig)
+	youtubeYoutubeClient, err := NewYoutubeClient(configConfig)
 	if err != nil {
 		return nil, err
 	}
-	return youtubeManager, nil
+	wrapper, err := NewWrapper(youtubeYoutubeClient)
+	if err != nil {
+		return nil, err
+	}
+	return wrapper, nil
 }
+
+func InitializeYoutubeClient() (*youtubeClient, error) {
+	configConfig := config.NewConfig()
+	youtubeYoutubeClient, err := NewYoutubeClient(configConfig)
+	if err != nil {
+		return nil, err
+	}
+	return youtubeYoutubeClient, nil
+}
+
+// wire.go:
+
+var NewYoutubeClientSet = wire.NewSet(
+	NewYoutubeClient, wire.Bind(new(client), new(*youtubeClient)))

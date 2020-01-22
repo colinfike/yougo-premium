@@ -7,7 +7,16 @@ import (
 	"github.com/google/wire"
 )
 
+var NewYoutubeClientSet = wire.NewSet(
+    NewYoutubeClient,
+    wire.Bind(new(client), new(*youtubeClient)))
+
 func InitializeWrapper() (*Wrapper, error) {
-	wire.Build(config.NewConfig, NewWrapper)
+	wire.Build(config.NewConfig, NewYoutubeClientSet, NewWrapper)
 	return &Wrapper{}, nil
 }
+func InitializeYoutubeClient() (*youtubeClient, error) {
+	wire.Build(config.NewConfig, NewYoutubeClient)
+	return &youtubeClient{}, nil
+}
+

@@ -23,7 +23,6 @@ type ChannelInfo struct {
 
 // Wrapper is the main struct for interacting with the youtube package.
 type Wrapper struct {
-	config        *config.Config
 	youtubeClient client
 }
 
@@ -34,14 +33,8 @@ type client interface {
 }
 
 // NewWrapper initializes and returns a Wrapper
-func NewWrapper(c *config.Config) (*Wrapper, error) {
-	// DI in the youtube client
-	ctx := context.Background()
-	youtubeService, err := youtubesdk.NewService(ctx, option.WithAPIKey(c.YoutubeAPIKey))
-	if err != nil {
-		return nil, err
-	}
-	return &Wrapper{c, &youtubeClient{youtubeService}}, nil
+func NewWrapper(client client) (*Wrapper, error) {
+	return &Wrapper{client}, nil
 }
 
 // GetChannelInfo accepts a video or channel URL and returns ChannelInfo
@@ -104,6 +97,16 @@ func getMatch(regex string, input string) (string, error) {
 // Wrapper barely does anything more than youtubeClient but the exercise is worth it.
 type youtubeClient struct {
 	service *youtubesdk.Service
+	config  *config.Config
+}
+
+func NewYoutubeClient(c *config.Config) (*youtubeClient, error) {
+	ctx := context.Background()
+	youtubeService, err := youtubesdk.NewService(ctx, option.WithAPIKey(c.YoutubeAPIKey))
+	if err != nil {
+		return &youtubeClient{}, err
+	}
+	return &youtubeClient{youtubeService, c}, err
 }
 
 func (yt *youtubeClient) listChannels(channelID string) (ChannelInfo, error) {
