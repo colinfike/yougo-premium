@@ -31,6 +31,10 @@ func main() {
 					if err != nil {
 						return err
 					}
+					err = subManager.SaveSubscriptions()
+					if err != nil {
+						return err
+					}
 					fmt.Println("Subscribed to " + chanName)
 					return nil
 				},
@@ -41,6 +45,10 @@ func main() {
 				Usage:   "remove a channel to your subscriptions via channel ID",
 				Action: func(c *cli.Context) error {
 					chanName, err := commands.RemoveSubscription(c.Args().First(), subManager)
+					if err != nil {
+						return err
+					}
+					err = subManager.SaveSubscriptions()
 					if err != nil {
 						return err
 					}
@@ -68,6 +76,10 @@ func main() {
 				Action: func(c *cli.Context) error {
 					fmt.Println("Checking for new videos...")
 					vidCount, err := commands.RefreshVideos(subManager, ytManager, downloader)
+					if err != nil {
+						return err
+					}
+					err = subManager.SaveSubscriptions()
 					if err != nil {
 						return err
 					}

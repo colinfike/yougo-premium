@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/colinfike/yougo-premium/internal/config"
-	"github.com/colinfike/yougo-premium/internal/youtube"
 )
 
 // Subscription contains all pertinent information about a subscribed channel
@@ -47,7 +46,8 @@ func (subManager *SubManager) loadSubscriptions() (map[string]Subscription, erro
 	return subscriptions, nil
 }
 
-func (subManager *SubManager) saveSubscriptions() error {
+// SaveSubscriptions encodes the subscription map as json and writes it to disk.
+func (subManager *SubManager) SaveSubscriptions() error {
 	b, err := json.Marshal(subManager.subscriptions)
 	if err != nil {
 		return err
@@ -76,15 +76,11 @@ func NewSubManager(c *config.Config) (*SubManager, error) {
 }
 
 // AddSubscription adds the new channel to subscriptions and writes them to disk.
-func (subManager *SubManager) AddSubscription(channel youtube.ChannelInfo) error {
-	if _, ok := subManager.subscriptions[channel.ID]; ok {
+func (subManager *SubManager) AddSubscription(chanID, chanName string) error {
+	if _, ok := subManager.subscriptions[chanID]; ok {
 		return errors.New("Already subscribed to this channel")
 	}
-	subManager.subscriptions[channel.ID] = Subscription{channel.ID, channel.Name, ""}
-	err := subManager.saveSubscriptions()
-	if err != nil {
-		return err
-	}
+	subManager.subscriptions[chanID] = Subscription{chanID, chanName, ""}
 	return nil
 }
 
@@ -92,10 +88,6 @@ func (subManager *SubManager) AddSubscription(channel youtube.ChannelInfo) error
 func (subManager *SubManager) RemoveSubscription(channelID string) (string, error) {
 	chanName := subManager.subscriptions[channelID].ChannelName
 	delete(subManager.subscriptions, channelID)
-	err := subManager.saveSubscriptions()
-	if err != nil {
-		return "", err
-	}
 	return chanName, nil
 }
 
@@ -104,12 +96,6 @@ func (subManager *SubManager) UpdateLastRefresh(channelID string) error {
 	sub := subManager.subscriptions[channelID]
 	sub.LastRefresh = time.Now().Format(time.RFC3339)
 	subManager.subscriptions[channelID] = sub
-
-	err := subManager.saveSubscriptions()
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 

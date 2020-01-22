@@ -7,5 +7,6 @@ require (
 	github.com/google/wire v0.4.0
 	github.com/stretchr/testify v1.4.0
 	github.com/urfave/cli/v2 v2.1.1
+	github.com/vektra/mockery v0.0.0-20181123154057-e78b021dcbb5 // indirect
 	google.golang.org/api v0.15.0
 )

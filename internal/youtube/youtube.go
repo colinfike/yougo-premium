@@ -10,6 +10,7 @@ import (
 	youtubesdk "google.golang.org/api/youtube/v3"
 )
 
+// ChannelInfo contains pertitnent information for a Channel.
 type ChannelInfo struct {
 	ID, Name string
 }

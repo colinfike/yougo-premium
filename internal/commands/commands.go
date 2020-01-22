@@ -17,7 +17,7 @@ func AddSubscription(url string, subManager *subscriptions.SubManager, ytManager
 	if err != nil {
 		return "", err
 	}
-	return channelInfo.Name, subManager.AddSubscription(channelInfo)
+	return channelInfo.Name, subManager.AddSubscription(channelInfo.ID, channelInfo.Name)
 }
 
 // RemoveSubscription removes the channel associated with the channelID passed in
