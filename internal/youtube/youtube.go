@@ -83,7 +83,7 @@ func (m *Wrapper) FetchNewVideos(channelID, ts string) ([]string, error) {
 	return urls, nil
 }
 
-// Move to some sort of utils package?
+// TODO: Move to some sort of utils package?
 func getMatch(regex string, input string) (string, error) {
 	re := regexp.MustCompile(regex)
 	matches := re.FindSubmatch([]byte(input))
