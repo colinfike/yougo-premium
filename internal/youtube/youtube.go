@@ -100,6 +100,7 @@ type youtubeClient struct {
 	config  *config.Config
 }
 
+// NewYoutubeClient is the provider function for the wrapper around the Google Youtube API.
 func NewYoutubeClient(c *config.Config) (*youtubeClient, error) {
 	ctx := context.Background()
 	youtubeService, err := youtubesdk.NewService(ctx, option.WithAPIKey(c.YoutubeAPIKey))
@@ -116,6 +117,7 @@ func (yt *youtubeClient) listChannels(channelID string) (ChannelInfo, error) {
 	}
 	return ChannelInfo{resp.Items[0].Id, resp.Items[0].Snippet.Title}, nil
 }
+
 func (yt *youtubeClient) listVideos(videoID string) (ChannelInfo, error) {
 	resp, err := yt.service.Videos.List("snippet").Id(videoID).Do()
 	if err != nil || len(resp.Items) == 0 {
@@ -123,6 +125,7 @@ func (yt *youtubeClient) listVideos(videoID string) (ChannelInfo, error) {
 	}
 	return ChannelInfo{resp.Items[0].Snippet.ChannelId, resp.Items[0].Snippet.ChannelTitle}, nil
 }
+
 func (yt *youtubeClient) searchVideos(channelID string, ts string, maxResults int64) ([]string, error) {
 	req := yt.service.Search.List("snippet").ChannelId(channelID).Order("date").MaxResults(maxResults)
 	if ts != "" {

@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/colinfike/yougo-premium/internal/subscriptions"
 	"github.com/colinfike/yougo-premium/internal/video"
@@ -41,7 +42,9 @@ func ListVideos(subManager *subscriptions.SubManager) error {
 
 // RefreshVideos downloads all new videos from all subscriptions since the last time they were refreshed.
 func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.Wrapper, downloader *video.Downloader) (int, error) {
+	var wg sync.WaitGroup
 	var vidCount int
+
 	for _, sub := range subManager.GetSubscriptions() {
 		ids, err := youtubeManger.FetchNewVideos(sub.ChannelID, sub.LastRefresh)
 		if err != nil {
@@ -49,14 +52,24 @@ func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.
 		}
 		vidCount += len(ids)
 		for _, id := range ids {
-			name, err := downloader.DownloadVideo(id)
-			if err != nil {
-				return 0, err
-			}
-			fmt.Println("Downloaded " + name)
+			wg.Add(1)
+			// CDF: Don't think we really need to simulataneously download the videos but go routines are neat.
+			go func(id string) {
+				defer wg.Done()
+				name, err := downloader.DownloadVideo(id)
+				if err != nil {
+					fmt.Println("Error downloading video id " + id)
+					// TODO: Add channel based error handling to handle asynchronicity
+					// return 0, err
+				}
+				fmt.Println("Downloaded " + name)
+			}(id)
 		}
+		wg.Wait()
+
 		subManager.UpdateLastRefresh(sub.ChannelID)
 	}
+
 	return vidCount, nil
 }
 

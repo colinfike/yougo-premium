@@ -1,9 +1,9 @@
 package video
 
 import (
-	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
+	"net/http"
 	"os"
 	"os/user"
 
@@ -27,23 +27,56 @@ func (dl *Downloader) DownloadVideo(videoID string) (string, error) {
 	if err != nil {
 		return "", errors.New("Failed to get video info")
 	}
-
-	// TODO: Can we stream this? I don't want to download into memory then write to disk
-	// ToDo: I think we'll need to use a different libary to do the downloading from the URL
-	buf := new(bytes.Buffer)
-	// TODO: Without streaming this format is killing my laptop
+	// TODO: Add configuration of download quality
 	// bestFormat := vid.Formats.Best(ytdl.FormatResolutionKey)[0]
-	err = vid.Download(vid.Formats[0], buf)
-	if err != nil {
-		return "", errors.New("Error downloading video")
-	}
-
-	user, err := user.Current()
+	url, err := vid.GetDownloadURL(vid.Formats[0])
 	if err != nil {
 		return "", err
 	}
 
+	resp, err := http.Get(url.String())
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	name, path, err := dl.generateNameAndPath(vid)
+	if err != nil {
+		return "", err
+	}
+	destFile, err := os.Create(path)
+	defer destFile.Close()
+	if err != nil {
+		return "", err
+	}
+
+	err = streamDownload(resp.Body, destFile)
+
+	return name, nil
+}
+
+func (dl *Downloader) generateNameAndPath(vid *ytdl.VideoInfo) (string, string, error) {
+	user, err := user.Current()
+	if err != nil {
+		return "", "", err
+	}
 	name := vid.Uploader + " - " + vid.Title + "." + vid.Formats[0].Extension
 	path := user.HomeDir + dl.config.DownloadLocation + name
-	return name, ioutil.WriteFile(path, buf.Bytes(), os.FileMode(int(0777)))
+
+	return name, path, nil
+}
+
+func streamDownload(body io.ReadCloser, file *os.File) error {
+	buf := make([]byte, 102400)
+	for {
+		n, err := body.Read(buf)
+		if err == io.EOF {
+			file.Write(buf[0:n])
+			break
+		} else if err != nil {
+			return err
+		}
+		file.Write(buf[0:n])
+	}
+	return nil
 }
