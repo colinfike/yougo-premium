@@ -75,7 +75,7 @@ func NewSubManager(c *config.Config) (*SubManager, error) {
 	return manager, nil
 }
 
-// AddSubscription adds the new channel to subscriptions and writes them to disk.
+// AddSubscription adds the new channel to subscriptions
 func (subManager *SubManager) AddSubscription(chanID, chanName string) error {
 	if _, ok := subManager.subscriptions[chanID]; ok {
 		return errors.New("Already subscribed to this channel")
@@ -84,7 +84,7 @@ func (subManager *SubManager) AddSubscription(chanID, chanName string) error {
 	return nil
 }
 
-// RemoveSubscription removes the passed subscription and writes them to disk.
+// RemoveSubscription removes the passed subscription
 func (subManager *SubManager) RemoveSubscription(channelID string) (string, error) {
 	chanName := subManager.subscriptions[channelID].ChannelName
 	delete(subManager.subscriptions, channelID)
