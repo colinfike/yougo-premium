@@ -74,6 +74,8 @@ func main() {
 				Name:  "refresh",
 				Usage: "download latest videos from your subscriptions",
 				Action: func(c *cli.Context) error {
+					downloader.InitVideoDirectory()
+
 					fmt.Println("Checking for new videos...")
 					vidCount, err := commands.RefreshVideos(subManager, ytManager, downloader)
 					if err != nil {

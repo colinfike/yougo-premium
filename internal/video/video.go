@@ -21,44 +21,44 @@ func NewDownloader(c *config.Config) (*Downloader, error) {
 }
 
 // DownloadVideo downloads a youtube video to the default download location.
-func (dl *Downloader) DownloadVideo(videoID string) (string, error) {
+func (dl *Downloader) DownloadVideo(videoID string) error {
 	vid, err := ytdl.GetVideoInfo("https://www.youtube.com/watch?v=" + videoID)
 	if err != nil {
-		return "", errors.New("Failed to get video info")
+		return errors.New("Failed to get video info")
 	}
 	// TODO: Add configuration of download quality
 	// bestFormat := vid.Formats.Best(ytdl.FormatResolutionKey)[0]
 	url, err := vid.GetDownloadURL(vid.Formats[0])
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	resp, err := http.Get(url.String())
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer resp.Body.Close()
 
-	name, path, err := dl.generateNameAndPath(vid)
+	path, err := dl.generatePath(vid)
 	if err != nil {
-		return "", err
+		return err
 	}
 	destFile, err := os.Create(path)
 	defer destFile.Close()
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	err = streamDownload(resp.Body, destFile)
 
-	return name, nil
+	return nil
 }
 
-func (dl *Downloader) generateNameAndPath(vid *ytdl.VideoInfo) (string, string, error) {
+func (dl *Downloader) generatePath(vid *ytdl.VideoInfo) (string, error) {
 	name := vid.Uploader + " - " + vid.Title + "." + vid.Formats[0].Extension
 	path := dl.config.HomeDir + dl.config.DownloadLocation + name
 
-	return name, path, nil
+	return path, nil
 }
 
 func streamDownload(body io.ReadCloser, file *os.File) error {

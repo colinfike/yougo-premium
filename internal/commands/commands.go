@@ -10,8 +10,6 @@ import (
 	"github.com/colinfike/yougo-premium/internal/youtube"
 )
 
-// TODO: Rename to app code?
-
 // AddSubscription adds the channel associated with the URL to subscriptions
 func AddSubscription(url string, subManager *subscriptions.SubManager, ytManager *youtube.Wrapper) (string, error) {
 	channelInfo, err := ytManager.GetChannelInfo(url)
@@ -45,27 +43,26 @@ func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.
 	var wg sync.WaitGroup
 	var vidCount int
 
-	downloader.InitVideoDirectory()
-
 	for _, sub := range subManager.GetSubscriptions() {
-		ids, err := youtubeManger.FetchNewVideos(sub.ChannelID, sub.LastRefresh)
+		videos, err := youtubeManger.FetchNewVideos(sub.ChannelID, sub.LastRefresh)
 		if err != nil {
 			return 0, err
 		}
-		vidCount += len(ids)
-		for _, id := range ids {
+		vidCount += len(videos)
+		for _, video := range videos {
 			wg.Add(1)
 			// CDF: Don't think we really need to simulataneously download the videos but go routines are neat.
-			go func(id string) {
+			go func(video youtube.VideoInfo) {
 				defer wg.Done()
-				name, err := downloader.DownloadVideo(id)
+				fmt.Println("Downloading " + video.Name)
+				err := downloader.DownloadVideo(video.ID)
 				if err != nil {
-					fmt.Println("Error downloading video id " + id)
-					// TODO: Add channel based error handling to handle asynchronicity
+					fmt.Println("Error downloading video id " + video.ID)
+					// TODO: Add video based error handling to handle asynchronicity
 					// return 0, err
 				}
-				fmt.Println("Downloaded " + name)
-			}(id)
+				// fmt.Println("Downloaded " + video.Name)
+			}(video)
 		}
 		wg.Wait()
 

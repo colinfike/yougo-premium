@@ -11,8 +11,13 @@ const (
 	maxVideoCount int64  = 5
 )
 
-// ChannelInfo contains pertitnent information for a Channel.
+// ChannelInfo contains pertinent information for a Channel.
 type ChannelInfo struct {
+	ID, Name string
+}
+
+// VideoInfo contains pertinent information for a Video.
+type VideoInfo struct {
 	ID, Name string
 }
 
@@ -64,12 +69,12 @@ func (m *Wrapper) getChannelFromChannelID(channelID string) (ChannelInfo, error)
 }
 
 // FetchNewVideos returns an array of video URLs.
-func (m *Wrapper) FetchNewVideos(channelID, ts string) ([]string, error) {
-	urls, err := m.youtubeClient.searchVideos(channelID, ts, maxVideoCount)
+func (m *Wrapper) FetchNewVideos(channelID, ts string) ([]VideoInfo, error) {
+	videos, err := m.youtubeClient.searchVideos(channelID, ts, maxVideoCount)
 	if err != nil {
 		return nil, err
 	}
-	return urls, nil
+	return videos, nil
 }
 
 // TODO: Move to some sort of utils package?

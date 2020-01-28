@@ -11,7 +11,7 @@ import (
 type client interface {
 	listChannels(string) (ChannelInfo, error)
 	listVideos(string) (ChannelInfo, error)
-	searchVideos(string, string, int64) ([]string, error)
+	searchVideos(string, string, int64) ([]VideoInfo, error)
 }
 
 // youtubeClient is a wrapper around the youtube API in order to faciliate DI/unit testing of the functions on Wrapper.
@@ -47,7 +47,7 @@ func (yt *youtubeClient) listVideos(videoID string) (ChannelInfo, error) {
 	return ChannelInfo{resp.Items[0].Snippet.ChannelId, resp.Items[0].Snippet.ChannelTitle}, nil
 }
 
-func (yt *youtubeClient) searchVideos(channelID string, ts string, maxResults int64) ([]string, error) {
+func (yt *youtubeClient) searchVideos(channelID string, ts string, maxResults int64) ([]VideoInfo, error) {
 	req := yt.service.Search.List("snippet").ChannelId(channelID).Order("date").MaxResults(maxResults)
 	if ts != "" {
 		req.PublishedAfter(ts)
@@ -56,9 +56,9 @@ func (yt *youtubeClient) searchVideos(channelID string, ts string, maxResults in
 	if err != nil {
 		return nil, err
 	}
-	urls := make([]string, 0)
+	videos := make([]VideoInfo, 0)
 	for _, video := range resp.Items {
-		urls = append(urls, video.Id.VideoId)
+		videos = append(videos, VideoInfo{video.Id.VideoId, video.Snippet.Title})
 	}
-	return urls, nil
+	return videos, nil
 }
