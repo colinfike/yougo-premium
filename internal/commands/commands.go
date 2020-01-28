@@ -51,17 +51,14 @@ func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.
 		vidCount += len(videos)
 		for _, video := range videos {
 			wg.Add(1)
-			// CDF: Don't think we really need to simulataneously download the videos but go routines are neat.
 			go func(video youtube.VideoInfo) {
 				defer wg.Done()
 				fmt.Println("Downloading " + video.Name)
 				err := downloader.DownloadVideo(video.ID)
 				if err != nil {
 					fmt.Println("Error downloading video id " + video.ID)
-					// TODO: Add video based error handling to handle asynchronicity
-					// return 0, err
+					// TODO: Handle errors here. Channels maybe?
 				}
-				// fmt.Println("Downloaded " + video.Name)
 			}(video)
 		}
 		wg.Wait()
