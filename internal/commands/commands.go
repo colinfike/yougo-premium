@@ -45,6 +45,8 @@ func RefreshVideos(subManager *subscriptions.SubManager, youtubeManger *youtube.
 	var wg sync.WaitGroup
 	var vidCount int
 
+	downloader.InitVideoDirectory()
+
 	for _, sub := range subManager.GetSubscriptions() {
 		ids, err := youtubeManger.FetchNewVideos(sub.ChannelID, sub.LastRefresh)
 		if err != nil {

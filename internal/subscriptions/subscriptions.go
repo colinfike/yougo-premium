@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"sync"
 	"time"
 
@@ -29,11 +28,7 @@ var once sync.Once
 var manager *SubManager
 
 func (subManager *SubManager) loadSubscriptions() (map[string]Subscription, error) {
-	user, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-	newData, err := ioutil.ReadFile(user.HomeDir + subManager.config.SubscriptionLocation)
+	newData, err := ioutil.ReadFile(subManager.config.HomeDir + subManager.config.SubscriptionLocation)
 	if err != nil {
 		return map[string]Subscription{}, nil
 	}
@@ -52,11 +47,7 @@ func (subManager *SubManager) SaveSubscriptions() error {
 	if err != nil {
 		return err
 	}
-	user, err := user.Current()
-	if err != nil {
-		return err
-	}
-	ioutil.WriteFile(user.HomeDir+subManager.config.SubscriptionLocation, b, os.FileMode(int(0777)))
+	ioutil.WriteFile(subManager.config.HomeDir+subManager.config.SubscriptionLocation, b, os.FileMode(int(0755)))
 	return nil
 }
 

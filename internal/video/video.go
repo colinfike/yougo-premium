@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/user"
 
 	"github.com/colinfike/yougo-premium/internal/config"
 	"github.com/colinfike/ytdl"
@@ -56,12 +55,8 @@ func (dl *Downloader) DownloadVideo(videoID string) (string, error) {
 }
 
 func (dl *Downloader) generateNameAndPath(vid *ytdl.VideoInfo) (string, string, error) {
-	user, err := user.Current()
-	if err != nil {
-		return "", "", err
-	}
 	name := vid.Uploader + " - " + vid.Title + "." + vid.Formats[0].Extension
-	path := user.HomeDir + dl.config.DownloadLocation + name
+	path := dl.config.HomeDir + dl.config.DownloadLocation + name
 
 	return name, path, nil
 }
@@ -77,6 +72,16 @@ func streamDownload(body io.ReadCloser, file *os.File) error {
 			return err
 		}
 		file.Write(buf[0:n])
+	}
+	return nil
+}
+
+// InitVideoDirectory initializes the download directory if it does not exist
+func (dl *Downloader) InitVideoDirectory() error {
+	if _, err := os.Stat(dl.config.HomeDir + dl.config.DownloadLocation); os.IsNotExist(err) {
+		os.Mkdir(dl.config.HomeDir+dl.config.DownloadLocation, os.FileMode(int(0755)))
+	} else {
+		return err
 	}
 	return nil
 }
